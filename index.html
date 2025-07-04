@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epic Quest - Adventure RPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .game-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: auto 1fr auto;
+            gap: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .character-panel, .inventory-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .main-game {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-screen {
+            flex: 1;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .character-info h3, .inventory-panel h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 5px;
+        }
+
+        .stat-bar {
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .stat-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .stat-progress {
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .health-fill { background: linear-gradient(90deg, #ff6b6b, #ee5a52); }
+        .mana-fill { background: linear-gradient(90deg, #4ecdc4, #44a08d); }
+        .exp-fill { background: linear-gradient(90deg, #feca57, #ff9ff3); }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .inventory-slot {
+            aspect-ratio: 1;
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .inventory-slot:hover {
+            border-color: #667eea;
+            background: #e8f0fe;
+        }
+
+        .inventory-slot.filled {
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            font-weight: bold;
+        }
+
+        .game-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+            color: #333;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff7675, #fd79a8);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .location-display {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .location-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .enemy-display {
+            background: linear-gradient(135deg, #ff7675, #fd79a8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            transform: scale(0);
+            transition: transform 0.3s ease;
+        }
+
+        .enemy-display.active {
+            transform: scale(1);
+        }
+
+        .combat-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .quest-log {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .quest-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+
+        .quest-item.completed {
+            border-left-color: #00b894;
+            background: #d1f2eb;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .character-creation {
+            text-align: center;
+        }
+
+        .class-selection {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .class-card {
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .class-card:hover, .class-card.selected {
+            border-color: #667eea;
+            background: #e8f0fe;
+        }
+
+        .floating-damage {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.5rem;
+            pointer-events: none;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #667eea;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle 1s ease-out forwards;
+        }
+
+        @keyframes particle {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-100px);
+            }
+        }
+
+        .footer {
+            grid-column: 1 / -1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        @media (max-width: 1024px) {
+            .game-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr auto auto;
+            }
+            
+            .character-panel {
+                grid-row: 2;
+            }
+            
+            .main-game {
+                grid-row: 3;
+            }
+            
+            .inventory-panel {
+                grid-row: 4;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <h1>🗡️ Epic Quest</h1>
+            <p>An immersive RPG adventure awaits you!</p>
+        </header>
+
+        <div class="character-panel">
+            <div class="character-info">
+                <h3>Character</h3>
+                <div id="characterName">Hero</div>
+                <div id="characterClass">Warrior</div>
+                <div id="characterLevel">Level 1</div>
+                
+                <div class="stat-bar">
+                    <div class="stat-label">
+                        <span>Health</span>
+                        <span id="healthText">100/100</span>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-fill health-fill" id="healthBar" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-bar">
+                    <div class="stat-label">
+                        <span>Mana</span>
+                        <span id="manaText">50/50</span>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-fill mana-fill" id="manaBar" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <div class="stat-bar">
+                    <div class="stat-label">
+                        <span>Experience</span>
+                        <span id="expText">0/100</span>
+                    </div>
+                    <div class="stat-progress">
+                        <div class="stat-fill exp-fill" id="expBar" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div><strong>Gold:</strong> <span id="goldAmount">100</span></div>
+                    <div><strong>Attack:</strong> <span id="attackPower">10</span></div>
+                    <div><strong>Defense:</strong> <span id="defensePower">5</span></div>
+                </div>
+            </div>
+        </div>
+
+        <main class="main-game">
+            <div class="game-screen" id="gameScreen">
+                <div class="location-display">
+                    <div class="location-title" id="locationTitle">Village Square</div>
+                    <div id="locationDescription">A peaceful village where your adventure begins. The sun shines brightly on the cobblestone streets.</div>
+                </div>
+
+                <div id="gameContent">
+                    <p>Welcome to Epic Quest! Your adventure begins in a small village. What would you like to do?</p>
+                </div>
+
+                <div class="enemy-display" id="enemyDisplay">
+                    <h3 id="enemyName">Goblin</h3>
+                    <div>Health: <span id="enemyHealth">30</span></div>
+                    <div>Attack: <span id="enemyAttack">8</span></div>
+                </div>
+
+                <div class="quest-log">
+                    <h4>📜 Active Quests</h4>
+                    <div id="questList">
+                        <div class="quest-item">
+                            <strong>Welcome to Adventure</strong><br>
+                            Explore the village and talk to NPCs
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-controls">
+                <button class="btn btn-primary" onclick="explore()">🗺️ Explore</button>
+                <button class="btn btn-secondary" onclick="rest()">🏠 Rest</button>
+                <button class="btn btn-primary" onclick="shop()">🛒 Shop</button>
+                <button class="btn btn-secondary" onclick="inventory()">🎒 Inventory</button>
+                <button class="btn btn-danger" onclick="combat()">⚔️ Combat</button>
+                <button class="btn btn-primary" onclick="quest()">📜 Quests</button>
+            </div>
+
+            <div class="combat-actions" id="combatActions" style="display: none;">
+                <button class="btn btn-danger" onclick="attack()">⚔️ Attack</button>
+                <button class="btn btn-primary" onclick="defend()">🛡️ Defend</button>
+                <button class="btn btn-secondary" onclick="usePotion()">🧪 Potion</button>
+                <button class="btn btn-primary" onclick="castSpell()">✨ Spell</button>
+                <button class="btn btn-secondary" onclick="flee()">🏃 Flee</button>
+            </div>
+        </main>
+
+        <div class="inventory-panel">
+            <h3>Inventory</h3>
+            <div class="inventory-grid" id="inventoryGrid">
+                <!-- Inventory slots will be generated by JavaScript -->
+            </div>
+            <div style="margin-top: 15px;">
+                <div class="tooltip" data-tooltip="Restores 50 HP">
+                    <strong>Health Potions:</strong> <span id="potionCount">3</span>
+                </div>
+                <div class="tooltip" data-tooltip="Restores 30 MP">
+                    <strong>Mana Potions:</strong> <span id="manaPotionCount">2</span>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <button class="btn btn-primary" onclick="saveGame()">💾 Save Game</button>
+            <button class="btn btn-secondary" onclick="loadGame()">📁 Load Game</button>
+            <button class="btn btn-primary" onclick="showStats()">📊 Statistics</button>
+            <button class="btn btn-secondary" onclick="settings()">⚙️ Settings</button>
+            <button class="btn btn-primary" onclick="newGame()">🆕 New Game</button>
+        </footer>
+    </div>
+
+    <!-- Character Creation Modal -->
+    <div class="modal" id="characterModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('characterModal')">&times;</span>
+            <div class="character-creation">
+                <h2>Create Your Character</h2>
+                <div style="margin: 20px 0;">
+                    <label for="characterNameInput">Character Name:</label>
+                    <input type="text" id="characterNameInput" placeholder="Enter your name" style="width: 100%; padding: 10px; margin-top: 5px; border-radius: 5px; border: 1px solid #ddd;">
+                </div>
+                
+                <h3>Choose Your Class</h3>
+                <div class="class-selection">
+                    <div class="class-card" onclick="selectClass('warrior')">
+                        <h4>⚔️ Warrior</h4>
+                        <p>High health and attack power</p>
+                        <small>HP: 120, MP: 30, ATK: 15</small>
+                    </div>
+                    <div class="class-card" onclick="selectClass('mage')">
+                        <h4>🔮 Mage</h4>
+                        <p>Powerful spells and magic</p>
+                        <small>HP: 80, MP: 100, ATK: 8</small>
+                    </div>
+                    <div class="class-card" onclick="selectClass('rogue')">
+                        <h4>🗡️ Rogue</h4>
+                        <p>Fast and agile fighter</p>
+                        <small>HP: 90, MP: 60, ATK: 12</small>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="createCharacter()" style="margin-top: 20px;">Start Adventure!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Modal -->
+    <div class="modal" id="gameOverModal">
+        <div class="modal-content">
+            <div style="text-align: center;">
+                <h2 style="color: #ff7675;">💀 Game Over</h2>
+                <p>Your adventure has come to an end...</p>
+                <div style="margin: 20px 0;">
+                    <p><strong>Final Statistics:</strong></p>
+                    <p>Level Reached: <span id="finalLevel">1</span></p>
+                    <p>Enemies Defeated: <span id="enemiesDefeated">0</span></p>
+                    <p>Gold Earned: <span id="totalGoldEarned">0</span></p>
+                </div>
+                <button class="btn btn-primary" onclick="newGame()">Try Again</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        let gameState = {
+            character: {
+                name: 'Hero',
+                class: 'warrior',
+                level: 1,
+                health: 100,
+                maxHealth: 100,
+                mana: 50,
+                maxMana: 50,
+                experience: 0,
+                experienceToNext: 100,
+                gold: 100,
+                attack: 10,
+                defense: 5
+            },
+            inventory: {
+                healthPotions: 3,
+                manaPotions: 2,
+                items: []
+            },
+            location: 'village',
+            inCombat: false,
+            currentEnemy: null,
+            quests: [
+                { id: 1, name: 'Welcome to Adventure', description: 'Explore the village and talk to NPCs', completed: false }
+            ],
+            statistics: {
+                enemiesDefeated: 0,
+                totalGoldEarned: 0,
+                questsCompleted: 0
+            }
+        };
+
+        // Locations
+        const locations = {
+            village: {
+                name: 'Village Square',
+                description: 'A peaceful village where your adventure begins. The sun shines brightly on the cobblestone streets.',
+                enemies: ['goblin', 'rat'],
+                items: ['health_potion', 'gold']
+            },
+            forest: {
+                name: 'Dark Forest',
+                description: 'A mysterious forest filled with ancient trees and hidden dangers. Strange sounds echo through the shadows.',
+                enemies: ['wolf', 'spider', 'orc'],
+                items: ['mana_potion', 'sword', 'gold']
+            },
+            dungeon: {
+                name: 'Ancient Dungeon',
+                description: 'A foreboding dungeon with stone walls covered in moss. The air is thick with mystery and danger.',
+                enemies: ['skeleton', 'troll', 'dragon'],
+                items: ['treasure', 'magic_scroll', 'armor']
+            },
+            mountain: {
+                name: 'Misty Mountains',
+                description: 'Towering peaks shrouded in mist. The path is treacherous but rewards await the brave.',
+                enemies: ['giant', 'eagle', 'yeti'],
+                items: ['rare_gem', 'enchanted_weapon']
+            }
+        };
+
+        // Enemies
+        const enemies = {
+            goblin: { name: 'Goblin', health: 30, attack: 8, gold: 15, exp: 25 },
+            rat: { name: 'Giant Rat', health: 20, attack: 5, gold: 8, exp: 15 },
+            wolf: { name: 'Forest Wolf', health: 45, attack: 12, gold: 25, exp: 35 },
+            spider: { name: 'Giant Spider', health: 35, attack: 10, gold: 20, exp: 30 },
+            orc: { name: 'Orc Warrior', health: 60, attack: 15, gold: 40, exp: 50 },
+            skeleton: { name: 'Skeleton', health: 40, attack: 13, gold: 30, exp: 40 },
+            troll: { name: 'Cave Troll', health: 80, attack: 20, gold: 60, exp: 75 },
+            dragon: { name: 'Ancient Dragon', health: 150, attack: 35, gold: 200, exp: 150 },
+            giant: { name: 'Mountain Giant', health: 120, attack: 25, gold: 100, exp: 100 },
+            eagle: { name: 'Giant Eagle', health: 50, attack: 18, gold: 35, exp: 45 },
+            yeti: { name: 'Yeti', health: 90, attack: 22, gold: 70, exp: 80 }
+        };
+
+        // Initialize game
+        function initGame() {
+            updateDisplay();
+            generateInventorySlots();
+            showModal('characterModal');
+        }
+
+        // Character creation
+        let selectedClass = 'warrior';
+
+        function selectClass(className) {
+            selectedClass = className;
+            document.querySelectorAll('.class-card').forEach(card => card.classList.remove('selected'));
+            event.target.closest('.class-card').classList.add('selected');
+        }
+
+        function createCharacter() {
+            const name = document.getElementById('characterNameInput').value || 'Hero';
+            
+            gameState.character.name = name;
+            gameState.character.class = selectedClass;
+            
+            // Set class-specific stats
+            const classStats = {
+                warrior: { health: 120, mana: 30, attack: 15, defense: 8 },
+                mage: { health: 80, mana: 100, attack: 8, defense: 4 },
+                rogue: { health: 90, mana: 60, attack: 12, defense: 6 }
+            };
+            
+            const stats = classStats[selectedClass];
+            gameState.character.health = stats.health;
+            gameState.character.maxHealth = stats.health;
+            gameState.character.mana = stats.mana;
+            gameState.character.maxMana = stats.mana;
+            gameState.character.attack = stats.attack;
+            gameState.character.defense = stats.defense;
+            
+            closeModal('characterModal');
+            updateDisplay();
+            addMessage(`Welcome, ${name} the ${selectedClass.charAt(0).toUpperCase() + selectedClass.slice(1)}! Your adventure begins now.`);
+        }
+
+        // Display updates
+        function updateDisplay() {
+            const char = gameState.character;
+            
+            document.getElementById('characterName').textContent = char.name;
+            document.getElementById('characterClass').textContent = char.class.charAt(0).toUpperCase() + char.class.slice(1);
+            document.getElementById('characterLevel').textContent = `Level ${char.level}`;
+            
+            // Health bar
+            const healthPercent = (char.health / char.maxHealth) * 100;
+            document.getElementById('healthBar').style.width = healthPercent + '%';
+            document.getElementById('healthText').textContent = `${char.health}/${char.maxHealth}`;
+            
+            // Mana bar
+            const manaPercent = (char.mana / char.maxMana) * 100;
+            document.getElementById('manaBar').style.width = manaPercent + '%';
+            document.getElementById('manaText').textContent = `${char.mana}/${char.maxMana}`;
+            
+            // Experience bar
+            const expPercent = (char.experience / char.experienceToNext) * 100;
+            document.getElementById('expBar').style.width = expPercent + '%';
+            document.getElementById('expText').textContent = `${char.experience}/${char.experienceToNext}`;
+            
+            // Other stats
+            document.getElementById('goldAmount').textContent = char.gold;
+            document.getElementById('attackPower').textContent = char.attack;
+            document.getElementById('defensePower').textContent = char.defense;
+            
+            // Inventory
+            document.getElementById('potionCount').textContent = gameState.inventory.healthPotions;
+            document.getElementById('manaPotionCount').textContent = gameState.inventory.manaPotions;
+            
+            // Location
+            const location = locations[gameState.location];
+            document.getElementById('locationTitle').textContent = location.name;
+            document.getElementById('locationDescription').textContent = location.description;
+        }
+
+        // Game actions
+        function explore() {
+            const locationKeys = Object.keys(locations);
+            const randomLocation = locationKeys[Math.floor(Math.random() * locationKeys.length)];
+            gameState.location = randomLocation;
+            
+            const location = locations[randomLocation];
+            addMessage(`🗺️ You travel to ${location.name}. ${location.description}`);
+            
+            // Random encounter
+            if (Math.random() < 0.4) {
+                const randomItem = location.items[Math.floor(Math.random() * location.items.length)];
+                findItem(randomItem);
+            }
+            
+            if (Math.random() < 0.3) {
+                const randomEnemy = location.enemies[Math.floor(Math.random() * location.enemies.length)];
+                encounterEnemy(randomEnemy);
+            }
+            
+            updateDisplay();
+        }
+
+        function rest() {
+            const healAmount = Math.floor(gameState.character.maxHealth * 0.3);
+            const manaAmount = Math.floor(gameState.character.maxMana * 0.5);
+            
+            gameState.character.health = Math.min(gameState.character.maxHealth, gameState.character.health + healAmount);
+            gameState.character.mana = Math.min(gameState.character.maxMana, gameState.character.mana + manaAmount);
+            
+            addMessage(`😴 You rest and recover. Health +${healAmount}, Mana +${manaAmount}`);
+            updateDisplay();
+        }
+
+        function shop() {
+            const shopItems = [
+                { name: 'Health Potion', price: 25, effect: 'healthPotion' },
+                { name: 'Mana Potion', price: 30, effect: 'manaPotion' },
+                { name: 'Iron Sword', price: 100, effect: 'weapon' },
+                { name: 'Leather Armor', price: 80, effect: 'armor' }
+            ];
+            
+            let shopText = '🛒 Welcome to the shop!\n\n';
+            shopItems.forEach((item, index) => {
+                shopText += `${index + 1}. ${item.name} - ${item.price} gold\n`;
+            });
+            
+            const choice = prompt(shopText + '\nEnter item number to buy (or cancel):');
+            const itemIndex = parseInt(choice) - 1;
+            
+            if (itemIndex >= 0 && itemIndex < shopItems.length) {
+                const item = shopItems[itemIndex];
+                if (gameState.character.gold >= item.price) {
+                    gameState.character.gold -= item.price;
+                    
+                    switch (item.effect) {
+                        case 'healthPotion':
+                            gameState.inventory.healthPotions++;
+                            break;
+                        case 'manaPotion':
+                            gameState.inventory.manaPotions++;
+                            break;
+                        case 'weapon':
+                            gameState.character.attack += 5;
+                            break;
+                        case 'armor':
+                            gameState.character.defense += 3;
+                            break;
+                    }
+                    
+                    addMessage(`💰 You bought ${item.name} for ${item.price} gold!`);
+                    updateDisplay();
+                } else {
+                    addMessage('💸 Not enough gold!');
+                }
+            }
+        }
+
+        function inventory() {
+            let invText = '🎒 Your Inventory:\n\n';
+            invText += `Health Potions: ${gameState.inventory.healthPotions}\n`;
+            invText += `Mana Potions: ${gameState.inventory.manaPotions}\n`;
+            invText += `Gold: ${gameState.character.gold}\n`;
+            
+            if (gameState.inventory.items.length > 0) {
+                invText += '\nSpecial Items:\n';
+                gameState.inventory.items.forEach(item => {
+                    invText += `- ${item}\n`;
+                });
+            }
+            
+            addMessage(invText);
+        }
+
+        function combat() {
+            if (gameState.inCombat) {
+                addMessage('⚔️ You are already in combat!');
+                return;
+            }
+            
+            const locationEnemies = locations[gameState.location].enemies;
+            const randomEnemy = locationEnemies[Math.floor(Math.random() * locationEnemies.length)];
+            encounterEnemy(randomEnemy);
+        }
+
+        function quest() {
+            let questText = '📜 Your Quests:\n\n';
+            gameState.quests.forEach(quest => {
+                const status = quest.completed ? '✅' : '❌';
+                questText += `${status} ${quest.name}\n${quest.description}\n\n`;
+            });
+            addMessage(questText);
+        }
+
+        // Combat system
+        function encounterEnemy(enemyType) {
+            const enemy = { ...enemies[enemyType] };
+            gameState.currentEnemy = enemy;
+            gameState.inCombat = true;
+            
+            document.getElementById('enemyDisplay').classList.add('active');
+            document.getElementById('combatActions').style.display = 'grid';
+            document.querySelector('.game-controls').style.display = 'none';
+            
+            updateEnemyDisplay();
+            addMessage(`⚔️ A wild ${enemy.name} appears! Prepare for battle!`);
+        }
+
+        function updateEnemyDisplay() {
+            const enemy = gameState.currentEnemy;
+            document.getElementById('enemyName').textContent = enemy.name;
+            document.getElementById('enemyHealth').textContent = enemy.health;
+            document.getElementById('enemyAttack').textContent = enemy.attack;
+        }
+
+        function attack() {
+            if (!gameState.inCombat) return;
+            
+            const damage = Math.floor(Math.random() * gameState.character.attack) + 5;
+            gameState.currentEnemy.health -= damage;
+            
+            showFloatingDamage(damage, '#ff6b6b');
+            addMessage(`⚔️ You attack for ${damage} damage!`);
+            
+            if (gameState.currentEnemy.health <= 0) {
+                winCombat();
+            } else {
+                enemyAttack();
+            }
+            
+            updateEnemyDisplay();
+        }
+
+        function defend() {
+            addMessage('🛡️ You raise your guard, reducing incoming damage!');
+            gameState.character.defending = true;
+            enemyAttack();
+        }
+
+        function usePotion() {
+            if (gameState.inventory.healthPotions > 0) {
+                gameState.inventory.healthPotions--;
+                const healAmount = 50;
+                gameState.character.health = Math.min(gameState.character.maxHealth, gameState.character.health + healAmount);
+                addMessage(`🧪 You drink a health potion and recover ${healAmount} HP!`);
+                updateDisplay();
+                enemyAttack();
+            } else {
+                addMessage('❌ No health potions available!');
+            }
+        }
+
+        function castSpell() {
+            if (gameState.character.mana >= 20) {
+                gameState.character.mana -= 20;
+                const damage = Math.floor(Math.random() * 20) + 15;
+                gameState.currentEnemy.health -= damage;
+                
+                showFloatingDamage(damage, '#667eea');
+                createParticles();
+                addMessage(`✨ You cast a spell for ${damage} magical damage!`);
+                
+                if (gameState.currentEnemy.health <= 0) {
+                    winCombat();
+                } else {
+                    enemyAttack();
+                }
+                
+                updateDisplay();
+                updateEnemyDisplay();
+            } else {
+                addMessage('❌ Not enough mana!');
+            }
+        }
+
+        function flee() {
+            if (Math.random() < 0.7) {
+                endCombat();
+                addMessage('🏃 You successfully flee from combat!');
+            } else {
+                addMessage('❌ Failed to flee!');
+                enemyAttack();
+            }
+        }
+
+        function enemyAttack() {
+            const damage = Math.floor(Math.random() * gameState.currentEnemy.attack) + 2;
+            const actualDamage = gameState.character.defending ? Math.floor(damage / 2) : damage;
+            
+            gameState.character.health -= actualDamage;
+            gameState.character.defending = false;
+            
+            addMessage(`💥 ${gameState.currentEnemy.name} attacks you for ${actualDamage} damage!`);
+            
+            if (gameState.character.health <= 0) {
+                gameOver();
+            }
+            
+            updateDisplay();
+        }
+
+        function winCombat() {
+            const enemy = gameState.currentEnemy;
+            gameState.character.gold += enemy.gold;
+            gameState.character.experience += enemy.exp;
+            gameState.statistics.enemiesDefeated++;
+            gameState.statistics.totalGoldEarned += enemy.gold;
+            
+            addMessage(`🎉 You defeated the ${enemy.name}! Gained ${enemy.exp} XP and ${enemy.gold} gold!`);
+            
+            // Check for level up
+            if (gameState.character.experience >= gameState.character.experienceToNext) {
+                levelUp();
+            }
+            
+            endCombat();
+            updateDisplay();
+        }
+
+        function levelUp() {
+            gameState.character.level++;
+            gameState.character.experience -= gameState.character.experienceToNext;
+            gameState.character.experienceToNext = Math.floor(gameState.character.experienceToNext * 1.5);
+            
+            // Increase stats
+            gameState.character.maxHealth += 20;
+            gameState.character.health = gameState.character.maxHealth;
+            gameState.character.maxMana += 10;
+            gameState.character.mana = gameState.character.maxMana;
+            gameState.character.attack += 3;
+            gameState.character.defense += 2;
+            
+            addMessage(`🎊 LEVEL UP! You are now level ${gameState.character.level}! All stats increased!`);
+        }
+
+        function endCombat() {
+            gameState.inCombat = false;
+            gameState.currentEnemy = null;
+            
+            document.getElementById('enemyDisplay').classList.remove('active');
+            document.getElementById('combatActions').style.display = 'none';
+            document.querySelector('.game-controls').style.display = 'grid';
+        }
+
+        function gameOver() {
+            document.getElementById('finalLevel').textContent = gameState.character.level;
+            document.getElementById('enemiesDefeated').textContent = gameState.statistics.enemiesDefeated;
+            document.getElementById('totalGoldEarned').textContent = gameState.statistics.totalGoldEarned;
+            
+            showModal('gameOverModal');
+            endCombat();
+        }
+
+        // Utility functions
+        function findItem(itemType) {
+            switch (itemType) {
+                case 'health_potion':
+                    gameState.inventory.healthPotions++;
+                    addMessage('🧪 You found a health potion!');
+                    break;
+                case 'mana_potion':
+                    gameState.inventory.manaPotions++;
+                    addMessage('🔮 You found a mana potion!');
+                    break;
+                case 'gold':
+                    const goldAmount = Math.floor(Math.random() * 30) + 10;
+                    gameState.character.gold += goldAmount;
+                    addMessage(`💰 You found ${goldAmount} gold!`);
+                    break;
+                case 'sword':
+                    gameState.character.attack += 2;
+                    addMessage('⚔️ You found a better sword! Attack +2');
+                    break;
+                case 'armor':
+                    gameState.character.defense += 2;
+                    addMessage('🛡️ You found better armor! Defense +2');
+                    break;
+                default:
+                    gameState.inventory.items.push(itemType);
+                    addMessage(`✨ You found a ${itemType}!`);
+            }
+            updateDisplay();
+        }
+
+        function addMessage(message) {
+            const gameContent = document.getElementById('gameContent');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.margin = '10px 0';
+            messageDiv.style.padding = '10px';
+            messageDiv.style.background = 'rgba(255, 255, 255, 0.8)';
+            messageDiv.style.borderRadius = '5px';
+            messageDiv.style.borderLeft = '3px solid #667eea';
+            messageDiv.textContent = message;
+            
+            gameContent.appendChild(messageDiv);
+            gameContent.scrollTop = gameContent.scrollHeight;
+            
+            // Keep only last 10 messages
+            while (gameContent.children.length > 10) {
+                gameContent.removeChild(gameContent.firstChild);
+            }
+        }
+
+        function showFloatingDamage(damage, color) {
+            const gameScreen = document.getElementById('gameScreen');
+            const damageElement = document.createElement('div');
+            damageElement.className = 'floating-damage';
+            damageElement.textContent = `-${damage}`;
+            damageElement.style.color = color;
+            damageElement.style.left = Math.random() * 200 + 'px';
+            damageElement.style.top = Math.random() * 100 + 200 + 'px';
+            
+            gameScreen.appendChild(damageElement);
+            
+            setTimeout(() => {
+                gameScreen.removeChild(damageElement);
+            }, 1000);
+        }
+
+        function createParticles() {
+            const gameScreen = document.getElementById('gameScreen');
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 300 + 'px';
+                particle.style.top = Math.random() * 200 + 200 + 'px';
+                particle.style.animationDelay = Math.random() * 0.5 + 's';
+                
+                gameScreen.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (gameScreen.contains(particle)) {
+                        gameScreen.removeChild(particle);
+                    }
+                }, 1500);
+            }
+        }
+
+        function generateInventorySlots() {
+            const inventoryGrid = document.getElementById('inventoryGrid');
+            inventoryGrid.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'inventory-slot';
+                slot.onclick = () => useInventorySlot(i);
+                
+                if (i < gameState.inventory.items.length) {
+                    slot.classList.add('filled');
+                    slot.textContent = gameState.inventory.items[i].charAt(0).toUpperCase();
+                    slot.title = gameState.inventory.items[i];
+                }
+                
+                inventoryGrid.appendChild(slot);
+            }
+        }
+
+        function useInventorySlot(index) {
+            if (index < gameState.inventory.items.length) {
+                const item = gameState.inventory.items[index];
+                addMessage(`🎒 You examine the ${item}`);
+            }
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // Save/Load functions
+        function saveGame() {
+            localStorage.setItem('epicQuestSave', JSON.stringify(gameState));
+            addMessage('💾 Game saved successfully!');
+        }
+
+        function loadGame() {
+            const savedGame = localStorage.getItem('epicQuestSave');
+            if (savedGame) {
+                gameState = JSON.parse(savedGame);
+                updateDisplay();
+                generateInventorySlots();
+                addMessage('📁 Game loaded successfully!');
+            } else {
+                addMessage('❌ No saved game found!');
+            }
+        }
+
+        function showStats() {
+            const stats = gameState.statistics;
+            let statsText = '📊 Your Statistics:\n\n';
+            statsText += `Level: ${gameState.character.level}\n`;
+            statsText += `Enemies Defeated: ${stats.enemiesDefeated}\n`;
+            statsText += `Total Gold Earned: ${stats.totalGoldEarned}\n`;
+            statsText += `Quests Completed: ${stats.questsCompleted}\n`;
+            statsText += `Current Location: ${locations[gameState.location].name}\n`;
+            
+            addMessage(statsText);
+        }
+
+        function settings() {
+            addMessage('⚙️ Settings: This feature will be expanded in future updates!');
+        }
+
+        function newGame() {
+            if (confirm('Are you sure you want to start a new game? All progress will be lost.')) {
+                // Reset game state
+                gameState = {
+                    character: {
+                        name: 'Hero',
+                        class: 'warrior',
+                        level: 1,
+                        health: 100,
+                        maxHealth: 100,
+                        mana: 50,
+                        maxMana: 50,
+                        experience: 0,
+                        experienceToNext: 100,
+                        gold: 100,
+                        attack: 10,
+                        defense: 5
+                    },
+                    inventory: {
+                        healthPotions: 3,
+                        manaPotions: 2,
+                        items: []
+                    },
+                    location: 'village',
+                    inCombat: false,
+                    currentEnemy: null,
+                    quests: [
+                        { id: 1, name: 'Welcome to Adventure', description: 'Explore the village and talk to NPCs', completed: false }
+                    ],
+                    statistics: {
+                        enemiesDefeated: 0,
+                        totalGoldEarned: 0,
+                        questsCompleted: 0
+                    }
+                };
+                
+                closeModal('gameOverModal');
+                document.getElementById('gameContent').innerHTML = '<p>Welcome to Epic Quest! Your adventure begins in a small village. What would you like to do?</p>';
+                updateDisplay();
+                generateInventorySlots();
+                showModal('characterModal');
+            }
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        // Initialize the game when page loads
+        window.onload = initGame;
+    </script>
+</body>
+</html>
